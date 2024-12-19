@@ -1,7 +1,8 @@
-#include <stdio.h>
+#include "util.h"
 #include <stdlib.h>
 
 int main(int argc, char **argv) {
-  printf("Hello, World\n");
+  WardenConfig *cfg = process_config();
+  free_config(cfg);
   exit(EXIT_SUCCESS);
 }
