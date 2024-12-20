@@ -1,5 +1,5 @@
 #include "util.h"
-#include <stdlib.h>
+#include <sys/stat.h>
 
 /*
  * @TODO:(#1) Handle Config paths array memory allocation/deallocation
@@ -8,13 +8,7 @@
  * development
  */
 
-WardenConfig *process_config(void) {
-  WardenConfig *cfg = (WardenConfig *)malloc(sizeof(WardenConfig));
-  return cfg;
-}
-
-void free_config(WardenConfig *cfg) {
-  if (cfg != NULL) {
-    free(cfg);
-  }
+int file_exists(const char *filename) {
+  struct stat buf;
+  return (stat(filename, &buf) == 0);
 }
