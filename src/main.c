@@ -1,8 +1,9 @@
-#include "util.h"
+#include "config.h"
 #include <stdlib.h>
 
 int main(int argc, char **argv) {
-  WardenConfig *cfg = process_config();
+  Config *cfg = init_config();
+  debug_config(cfg);
   free_config(cfg);
   exit(EXIT_SUCCESS);
 }
