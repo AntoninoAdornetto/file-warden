@@ -70,12 +70,12 @@ char *read_config(void) {
   int in_etc = file_exists(CFG_ETC_PATH);
 
   if (in_home) {
-    // @TODO: read configuration file in from ~/.file-warden.conf
+    // @TODO:(#3) read user configuration file in from ~/.file-warden.conf
     return "";
   }
 
   if (in_etc) {
-    // @TODO: read configuration file in from /etc/file-warden.conf
+    // @TODO:(#2) read system configuration file in from /etc/file-warden.conf
     return "";
   }
 
