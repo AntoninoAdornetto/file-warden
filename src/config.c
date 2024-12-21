@@ -36,9 +36,9 @@ Config *init_config(void) {
     exit(EXT_CFG_ALLOC);
   }
 
-  char *program_settings = read_config();
+  char *program_settings = get_config_settings(cfg);
   if (program_settings == NULL) {
-    fprintf(stderr, "[ERROR]: Failed to set default settings as fallback\n");
+    fprintf(stderr, "[ERROR]: Failed to get option settings\n");
     free_config(cfg);
     exit(EXT_NULL_CFG);
   }
@@ -48,6 +48,10 @@ Config *init_config(void) {
     fprintf(stderr, "[ERROR]: Failed to process program settings\n");
     free_config(cfg);
     exit(result);
+  }
+
+  if (cfg->config_loc & (CFG_LOC_HOME | CFG_LOC_ETC)) {
+    free(program_settings);
   }
 
   return cfg;
@@ -65,18 +69,26 @@ void free_config(Config *cfg) {
   free(cfg);
 }
 
-char *read_config(void) {
+char *get_config_settings(Config *cfg) {
   int in_home = file_exists(CFG_HOME_PATH);
   int in_etc = file_exists(CFG_ETC_PATH);
 
-  if (in_home) {
-    // @TODO:(#3) read user configuration file in from ~/.file-warden.conf
-    return "";
-  }
+  // we should use the home configuration first since it's user specific
+  // and defer to system configuration if home file is not present.
+  if (in_home || in_etc) {
+    cfg->config_loc |= in_home ? CFG_LOC_HOME : CFG_LOC_ETC;
 
-  if (in_etc) {
-    // @TODO:(#2) read system configuration file in from /etc/file-warden.conf
-    return "";
+    char *settings = read_file(in_home ? CFG_HOME_PATH : CFG_ETC_PATH);
+    if (settings != NULL) {
+      fprintf(stdout, "[INFO]: Using config at [%s]\n",
+              in_home ? CFG_HOME_PATH : CFG_ETC_PATH);
+      return settings;
+    }
+
+    fprintf(stdout,
+            "[WARNING]: Failed to read settings from config file at [%s]. "
+            "Using default settings as fallback\n",
+            in_home ? CFG_HOME_PATH : CFG_ETC_PATH);
   }
 
   fprintf(
@@ -85,7 +97,8 @@ char *read_config(void) {
       "or copy the example config to [/etc/file-warden.conf] or "
       "[~/.file-warden.conf].\n[INFO]: Deferring to default settings\n\n");
 
-  // Defaults we will resort to if the config files are not present.
+  // Sensible defaults we will set if the config files are not present.
+  cfg->config_loc |= CFG_LOC_DEFAULT;
   return "paths=~/.ssh/\nevents=accessed,modified,moved,closed\n";
 }
 

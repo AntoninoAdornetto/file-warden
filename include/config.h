@@ -18,6 +18,11 @@
 #define MAX_OPT_LEN 256
 #define OPT_SKIP 69
 
+/* Configuration file location bit flags */
+#define CFG_LOC_HOME 0x01
+#define CFG_LOC_ETC 0x02
+#define CFG_LOC_DEFAULT 0x04
+
 /* Exit Codes */
 #define EXT_NULL_CFG 1
 #define EXT_CFG_ALLOC 2
@@ -29,11 +34,14 @@
  * [paths_size] number of elements contained in [paths].
  * [events_bmask] bit mask that indicates what file events the daemon will
  * trigger notifications for.
+ * [config_loc] the config file used for current session. Corresponds to CFG_LOC
+ * bit flag
  */
 typedef struct {
   char **paths;
   int paths_size;
   u8 events_bmask;
+  u8 config_loc;
 } Config;
 
 /*
@@ -66,7 +74,7 @@ void free_config(Config *cfg);
  * the config files are not present, the function will defer to sensible
  * defaults.
  */
-char *read_config(void);
+char *get_config_settings(Config *cfg);
 
 /*
  * Setting options are a list of line separated strings. Some settings can have
