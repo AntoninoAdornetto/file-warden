@@ -202,41 +202,41 @@ void set_events_option(Config *cfg, char *value) {
 
 void debug_config(Config *cfg) {
   if (cfg == NULL) {
-    fprintf(stderr, "[DEBUG-ERROR]: Configuration struct is null\n");
+    fprintf(stderr, "[DEBUG]: Configuration struct is null\n");
   }
 
-  fprintf(stdout, "[INFO]: Paths option settings\n");
-  fprintf(stdout, "[INFO]: Number of paths set for monitoring [%d]\n",
+  fprintf(stdout, "[DEBUG]: Paths option settings\n");
+  fprintf(stdout, "[DEBUG]: Number of paths set for monitoring [%d]\n",
           cfg->paths_size);
 
   for (int i = 0; i < cfg->paths_size; i++) {
-    fprintf(stdout, "[INFO]: Path @ index [%d] contains value [%s]\n", i,
+    fprintf(stdout, "[DEBUG]: Path @ index [%d] contains value [%s]\n", i,
             cfg->paths[i]);
   }
   fprintf(stdout, "\n");
 
-  fprintf(stdout, "[INFO]: File event option settings\n");
+  fprintf(stdout, "[DEBUG]: File event option settings\n");
   if (cfg->events_bmask == 0) {
     fprintf(stderr, "[WARNING]: File event flags are not enabled\n");
     return;
   } else {
-    fprintf(stdout, "[INFO]: File Event Bit Flags [0x%08X]\n",
+    fprintf(stdout, "[DEBUG]: File Event Bit Flags [0x%08X]\n",
             cfg->events_bmask);
   }
 
   if (cfg->events_bmask & FLAG_ACCESS) {
-    fprintf(stdout, "[INFO]: File access event flag enabled\n");
+    fprintf(stdout, "[DEBUG]: File access event flag enabled\n");
   }
 
   if (cfg->events_bmask & FLAG_MODIFY) {
-    fprintf(stdout, "[INFO]: File modify event flag enabled\n");
+    fprintf(stdout, "[DEBUG]: File modify event flag enabled\n");
   }
 
   if (cfg->events_bmask & FLAG_MOVE) {
-    fprintf(stdout, "[INFO]: File move event flag enabled\n");
+    fprintf(stdout, "[DEBUG]: File move event flag enabled\n");
   }
 
   if (cfg->events_bmask & FLAG_CLOSE) {
-    fprintf(stdout, "[INFO]: File close event flag enabled\n");
+    fprintf(stdout, "[DEBUG]: File close event flag enabled\n");
   }
 }
