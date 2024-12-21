@@ -19,7 +19,7 @@ int file_exists(const char *filename);
 char *read_file(const char *filename);
 
 /*
- * Convenience function for expanding paths. eg. "~/.ssh"
+ * Convenience function for expanding paths. eg. "~/.ssh" -> "$HOME/.ssh/"
  */
 char *expand_path(const char *path);
 
