@@ -36,9 +36,9 @@ Config *init_config(void) {
     exit(EXT_CFG_ALLOC);
   }
 
-  char *program_settings = read_config();
+  char *program_settings = get_config_settings(cfg);
   if (program_settings == NULL) {
-    fprintf(stderr, "[ERROR]: Failed to set default settings as fallback\n");
+    fprintf(stderr, "[ERROR]: Failed to get option settings\n");
     free_config(cfg);
     exit(EXT_NULL_CFG);
   }
@@ -48,6 +48,10 @@ Config *init_config(void) {
     fprintf(stderr, "[ERROR]: Failed to process program settings\n");
     free_config(cfg);
     exit(result);
+  }
+
+  if (cfg->config_loc & (CFG_LOC_HOME | CFG_LOC_ETC)) {
+    free(program_settings);
   }
 
   return cfg;
@@ -65,18 +69,26 @@ void free_config(Config *cfg) {
   free(cfg);
 }
 
-char *read_config(void) {
+char *get_config_settings(Config *cfg) {
   int in_home = file_exists(CFG_HOME_PATH);
   int in_etc = file_exists(CFG_ETC_PATH);
 
-  if (in_home) {
-    // @TODO:(#3) read user configuration file in from ~/.file-warden.conf
-    return "";
-  }
+  // we should use the home configuration first since it's user specific
+  // and defer to system configuration if home file is not present.
+  if (in_home || in_etc) {
+    cfg->config_loc |= in_home ? CFG_LOC_HOME : CFG_LOC_ETC;
 
-  if (in_etc) {
-    // @TODO:(#2) read system configuration file in from /etc/file-warden.conf
-    return "";
+    char *settings = read_file(in_home ? CFG_HOME_PATH : CFG_ETC_PATH);
+    if (settings != NULL) {
+      fprintf(stdout, "[INFO]: Using config at [%s]\n",
+              in_home ? CFG_HOME_PATH : CFG_ETC_PATH);
+      return settings;
+    }
+
+    fprintf(stdout,
+            "[WARNING]: Failed to read settings from config file at [%s]. "
+            "Using default settings as fallback\n",
+            in_home ? CFG_HOME_PATH : CFG_ETC_PATH);
   }
 
   fprintf(
@@ -85,7 +97,8 @@ char *read_config(void) {
       "or copy the example config to [/etc/file-warden.conf] or "
       "[~/.file-warden.conf].\n[INFO]: Deferring to default settings\n\n");
 
-  // Defaults we will resort to if the config files are not present.
+  // Sensible defaults we will set if the config files are not present.
+  cfg->config_loc |= CFG_LOC_DEFAULT;
   return "paths=~/.ssh/\nevents=accessed,modified,moved,closed\n";
 }
 
@@ -202,41 +215,41 @@ void set_events_option(Config *cfg, char *value) {
 
 void debug_config(Config *cfg) {
   if (cfg == NULL) {
-    fprintf(stderr, "[DEBUG-ERROR]: Configuration struct is null\n");
+    fprintf(stderr, "[DEBUG]: Configuration struct is null\n");
   }
 
-  fprintf(stdout, "[INFO]: Paths option settings\n");
-  fprintf(stdout, "[INFO]: Number of paths set for monitoring [%d]\n",
+  fprintf(stdout, "[DEBUG]: Paths option settings\n");
+  fprintf(stdout, "[DEBUG]: Number of paths set for monitoring [%d]\n",
           cfg->paths_size);
 
   for (int i = 0; i < cfg->paths_size; i++) {
-    fprintf(stdout, "[INFO]: Path @ index [%d] contains value [%s]\n", i,
+    fprintf(stdout, "[DEBUG]: Path @ index [%d] contains value [%s]\n", i,
             cfg->paths[i]);
   }
   fprintf(stdout, "\n");
 
-  fprintf(stdout, "[INFO]: File event option settings\n");
+  fprintf(stdout, "[DEBUG]: File event option settings\n");
   if (cfg->events_bmask == 0) {
     fprintf(stderr, "[WARNING]: File event flags are not enabled\n");
     return;
   } else {
-    fprintf(stdout, "[INFO]: File Event Bit Flags [0x%08X]\n",
+    fprintf(stdout, "[DEBUG]: File Event Bit Flags [0x%08X]\n",
             cfg->events_bmask);
   }
 
   if (cfg->events_bmask & FLAG_ACCESS) {
-    fprintf(stdout, "[INFO]: File access event flag enabled\n");
+    fprintf(stdout, "[DEBUG]: File access event flag enabled\n");
   }
 
   if (cfg->events_bmask & FLAG_MODIFY) {
-    fprintf(stdout, "[INFO]: File modify event flag enabled\n");
+    fprintf(stdout, "[DEBUG]: File modify event flag enabled\n");
   }
 
   if (cfg->events_bmask & FLAG_MOVE) {
-    fprintf(stdout, "[INFO]: File move event flag enabled\n");
+    fprintf(stdout, "[DEBUG]: File move event flag enabled\n");
   }
 
   if (cfg->events_bmask & FLAG_CLOSE) {
-    fprintf(stdout, "[INFO]: File close event flag enabled\n");
+    fprintf(stdout, "[DEBUG]: File close event flag enabled\n");
   }
 }
