@@ -5,6 +5,7 @@
 #define EXT_INVAL_PATH
 
 typedef uint8_t u8;
+typedef uint32_t u32;
 
 /*
  * Convenience function to simply check if a file exists

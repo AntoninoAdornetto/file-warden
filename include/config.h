@@ -40,7 +40,7 @@
 typedef struct {
   char **paths;
   int paths_size;
-  u8 events_bmask;
+  u32 events_bmask;
   u8 config_loc;
 } Config;
 

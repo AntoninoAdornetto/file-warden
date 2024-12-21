@@ -99,7 +99,7 @@ char *get_config_settings(Config *cfg) {
 
   // Sensible defaults we will set if the config files are not present.
   cfg->config_loc |= CFG_LOC_DEFAULT;
-  return "paths=~/.ssh\nevents=accessed,modified,moved,closed\n";
+  return "paths=/home/byteblitz/Dev/tools/file-warden/src/main.c\nevents=accessed,modified,moved,closed\n";
 }
 
 int process_settings(Config *cfg, const char *settings) {
