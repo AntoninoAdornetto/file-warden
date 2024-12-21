@@ -99,7 +99,7 @@ char *get_config_settings(Config *cfg) {
 
   // Sensible defaults we will set if the config files are not present.
   cfg->config_loc |= CFG_LOC_DEFAULT;
-  return "paths=~/.ssh/\nevents=accessed,modified,moved,closed\n";
+  return "paths=~/.ssh\nevents=accessed,modified,moved,closed\n";
 }
 
 int process_settings(Config *cfg, const char *settings) {
@@ -184,7 +184,8 @@ void set_option(Config *cfg, u8 option_flag, char *value) {
 }
 
 void set_paths_option(Config *cfg, char *value) {
-  cfg->paths[cfg->paths_size] = malloc(sizeof(char) * strlen(value) + 1);
+  char *cleaned_path = expand_path(value);
+  cfg->paths[cfg->paths_size] = malloc(sizeof(char) * strlen(cleaned_path) + 1);
   if (cfg->paths[cfg->paths_size] == NULL) {
     fprintf(
         stderr,
@@ -194,7 +195,8 @@ void set_paths_option(Config *cfg, char *value) {
     return;
   }
 
-  strcpy(cfg->paths[cfg->paths_size], value);
+  strcpy(cfg->paths[cfg->paths_size], cleaned_path);
+  free(cleaned_path);
   cfg->paths_size++;
 }
 
