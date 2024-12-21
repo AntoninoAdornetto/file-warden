@@ -39,35 +39,35 @@ char *expand_path(const char *path) {
 }
 
 char *read_file(const char *filename) {
-  char *expanded_path = expand_path(filename);
-  if (expanded_path == NULL) {
+  char *cleaned_path = expand_path(filename);
+  if (cleaned_path == NULL) {
     fprintf(stderr, "[ERROR]: Failed to expand path\n");
     return NULL;
   }
 
   struct stat stat_buf;
-  int ok = stat(expanded_path, &stat_buf);
+  int ok = stat(cleaned_path, &stat_buf);
   if (ok == -1) {
-    fprintf(stderr, "[ERROR]: File [%s] does not exist\n", expanded_path);
+    fprintf(stderr, "[ERROR]: File [%s] does not exist\n", cleaned_path);
     return NULL;
   }
 
   char *buf = (char *)malloc(stat_buf.st_size + 1);
   if (buf == NULL) {
     fprintf(stderr, "[ERROR]: Failed to allocate memory for [%s] buffer\n",
-            expanded_path);
+            cleaned_path);
   }
 
-  int fd = open(expanded_path, O_RDONLY);
+  int fd = open(cleaned_path, O_RDONLY);
   if (fd == -1) {
-    fprintf(stderr, "[ERROR]: Failed to open file [%s]\n", expanded_path);
+    fprintf(stderr, "[ERROR]: Failed to open file [%s]\n", cleaned_path);
     free(buf);
     return NULL;
   }
 
   ssize_t bytes_read = read(fd, buf, stat_buf.st_size + 1);
   if (bytes_read == -1) {
-    fprintf(stderr, "[ERROR]: Failed to read file [%s]\n", expanded_path);
+    fprintf(stderr, "[ERROR]: Failed to read file [%s]\n", cleaned_path);
     close(fd);
     free(buf);
     return NULL;
@@ -75,6 +75,6 @@ char *read_file(const char *filename) {
 
   buf[bytes_read] = '\0';
   close(fd);
-  free(expanded_path);
+  free(cleaned_path);
   return buf;
 }
