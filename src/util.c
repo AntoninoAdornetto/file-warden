@@ -10,7 +10,8 @@
 
 int file_exists(const char *filename) {
   struct stat buf;
-  return (stat(filename, &buf) == 0);
+  int exists = stat(filename, &buf);
+  return exists == 0;
 }
 
 char *expand_path(const char *path) {
@@ -51,6 +52,7 @@ char *read_file(const char *filename) {
   char *buf = (char *)malloc(stat_buf.st_size + 1);
   if (buf == NULL) {
     syslog(LOG_ERR, "Failed to allocate memory for [%s] buffer\n", filename);
+    return NULL;
   }
 
   int fd = open(filename, O_RDONLY);
