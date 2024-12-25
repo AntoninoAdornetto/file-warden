@@ -1,5 +1,7 @@
 #include "config.h"
+#include "event.h"
 #include "util.h"
+#include <errno.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <sys/syslog.h>
@@ -41,11 +43,39 @@ int main(int argc, char **argv) {
     exit(sig_status);
   }
 
-  while (running) {
-    debug_config(cfg);
-    sleep(120);
+  EventState *state = start_event_listener(cfg);
+  if (state == NULL) {
+    syslog(LOG_ERR, "Failed to start file event listener\n");
+    free_config(cfg);
+    exit(EXT_START_LISTENER);
   }
 
+  // @TODO: rm config debugging once events are working as expected
+  debug_config(cfg);
+  while (running) {
+    state->poll_n = poll(state->fds, state->nfds, POLL_INTERVAL_MS);
+    if (state->poll_n == -1) {
+
+      if (errno == EINTR) {
+        continue;
+      }
+
+      syslog(LOG_ERR, "Failed to poll file descriptor for inotify events\n");
+      running = 0;
+    }
+
+    if (state->poll_n > 0 && state->fds[0].revents & POLLIN) {
+      int event_status = handle_events(state);
+
+      if (event_status != 0) {
+        syslog(LOG_ERR, "Failed to handle file events\n");
+        running = 0;
+      }
+    }
+  }
+
+  syslog(LOG_INFO, "Cleaning up...\n");
+  stop_event_listener(state);
   free_config(cfg);
   exit(EXIT_SUCCESS);
 }

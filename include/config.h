@@ -38,8 +38,8 @@
  * [paths_size] number of elements contained in [paths].
  * [events_bmask] bit mask that indicates what file events the daemon will
  * trigger notifications for.
- * [config_loc] the config file used for current session. Corresponds to CFG_LOC
- * bit flag
+ * [config_location] the config file used for current session. Corresponds to
+ * CFG_LOC bit flag.
  */
 typedef struct {
   char **paths;
