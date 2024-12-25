@@ -29,7 +29,9 @@
 #define EXT_CFG_ALLOC 2
 #define EXT_ERR_CFG 3
 #define EXT_OPT_FORMAT 4
-#define EXT_SET_PATH_OPT 5
+#define EXT_PROC_OPTS 5
+#define EXT_SET_OPT 6
+#define EXT_SET_PATH_OPT 7
 
 /*
  * [paths] houses the file/dir paths that the daemon will monitor.

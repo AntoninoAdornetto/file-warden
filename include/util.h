@@ -4,7 +4,7 @@
 #include <signal.h>
 #include <stdint.h>
 
-#define EXT_INIT_SIGNALS 6
+#define EXT_INIT_SIGNALS 8
 
 typedef uint8_t u8;
 

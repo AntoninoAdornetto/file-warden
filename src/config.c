@@ -79,10 +79,10 @@ char *get_config_settings(Config *cfg) {
   // we should use the home configuration first since it's user specific
   // and defer to system configuration if home file is not present.
   if (in_home || in_etc) {
-    cfg->config_location |= in_home ? CFG_LOC_HOME : CFG_LOC_ETC;
+    cfg->config_location = in_home ? CFG_LOC_HOME : CFG_LOC_ETC;
 
     char *settings = read_file(in_home ? CFG_HOME_PATH : CFG_ETC_PATH);
-    if (settings != NULL) {
+    if (settings == NULL) {
       syslog(LOG_INFO, "Using config file at [%s]\n",
              in_home ? CFG_HOME_PATH : CFG_ETC_PATH);
 
@@ -98,7 +98,7 @@ char *get_config_settings(Config *cfg) {
          "config.\nDeferring to sensible default settings");
 
   // Sensible default if the config files are not present.
-  cfg->config_location |= CFG_LOC_DEFAULT;
+  cfg->config_location = CFG_LOC_DEFAULT;
   return "paths=~/.ssh\nevents=accessed,modified,moved,closed\n";
 }
 
@@ -118,7 +118,9 @@ int process_settings(Config *cfg, const char *settings) {
 
   char *line = strtok(buf, "\n");
   while (line != NULL) {
-    process_line_option(cfg, line);
+    if (process_line_option(cfg, line) != 0) {
+      return EXT_PROC_OPTS;
+    }
     line = strtok(NULL, "\n");
   }
 
@@ -147,7 +149,9 @@ int process_line_option(Config *cfg, char *line) {
   strcpy(values, equal_sign + 1);
   token = strtok_r(values, ",", &remaining);
   while (token != NULL) {
-    set_option(cfg, opt_flag, token);
+    if (set_option(cfg, opt_flag, token) != 0) {
+      return EXT_SET_OPT;
+    }
     token = strtok_r(NULL, ",", &remaining);
   }
 
@@ -181,17 +185,22 @@ int set_option(Config *cfg, u8 option_flag, char *value) {
 }
 
 int set_paths_option(Config *cfg, char *value) {
-  char *cleaned_path = expand_path(value);
+  char *expanded_path = expand_path(value);
+  if (expanded_path == NULL) {
+    syslog(LOG_ERR, "Failed to expand path [%s]\n", value);
+    return EXT_SET_PATH_OPT;
+  }
 
-  cfg->paths[cfg->paths_size] = malloc(sizeof(char) * strlen(cleaned_path) + 1);
+  cfg->paths[cfg->paths_size] =
+      malloc(sizeof(char) * strlen(expanded_path) + 1);
   if (cfg->paths[cfg->paths_size] == NULL) {
     syslog(LOG_ERR, "Failed to allocate memory for path element at index [%d]",
            cfg->paths_size);
     return EXT_CFG_ALLOC;
   }
 
-  strcpy(cfg->paths[cfg->paths_size], cleaned_path);
-  free(cleaned_path);
+  strcpy(cfg->paths[cfg->paths_size], expanded_path);
+  free(expanded_path);
   cfg->paths_size++;
   return 0;
 }
@@ -233,8 +242,7 @@ void debug_config(Config *cfg) {
     syslog(LOG_DEBUG, "File event flags are not enabled\n");
     return;
   } else {
-    syslog(LOG_DEBUG, "File Event Bit Flags [0x%08X]\n",
-            cfg->events_bmask);
+    syslog(LOG_DEBUG, "File Event Bit Flags [0x%08X]\n", cfg->events_bmask);
   }
 
   if (cfg->events_bmask & FLAG_ACCESS) {
