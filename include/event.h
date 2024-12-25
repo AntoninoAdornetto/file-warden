@@ -28,6 +28,7 @@ typedef struct {
  * [poll_n] @TODO: create a note that describes [poll_n] responsibility
  * [wd_map] look up table that links inotify watch descriptors to paths. It
  * provides a simple way to determine which path triggered an event.
+ * [wd_entry_count] number of active elements contained in [wd_map].
  */
 typedef struct {
   int fd;
@@ -36,6 +37,7 @@ typedef struct {
   struct pollfd fds[1];
   int poll_n;
   WdEntry wd_map[MAX_WATCH_DESCRIPTORS];
+  int wd_entry_count;
 } EventState;
 
 /*

@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
   }
 
   syslog(LOG_INFO, "Cleaning up...\n");
-  free_config(cfg);
   stop_event_listener(state);
+  free_config(cfg);
   exit(EXIT_SUCCESS);
 }

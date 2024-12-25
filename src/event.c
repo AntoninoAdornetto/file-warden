@@ -29,6 +29,7 @@ EventState *start_event_listener(Config *cfg) {
     return NULL;
   }
 
+  state->wd_entry_count = 0;
   for (int i = 0; i < cfg->paths_size; i++) {
     if (i > MAX_WATCH_DESCRIPTORS - 1) {
       syslog(LOG_ERR, "Cannot watch more than [%d] files/directories\n",
@@ -53,8 +54,17 @@ EventState *start_event_listener(Config *cfg) {
       return NULL;
     }
 
+    state->wd_map[i].path = malloc(sizeof(char) * strlen(cfg->paths[i]) + 1);
+    if (state->wd_map[i].path == NULL) {
+      syslog(LOG_ERR,
+             "Failed to allocate memory for path mapping at index [%d]\n", i);
+      stop_event_listener(state);
+      return NULL;
+    }
+
     state->wd_map[i].wd = state->wd[i];
-    state->wd_map[i].path = cfg->paths[i];
+    strcpy(state->wd_map[i].path, cfg->paths[i]);
+    state->wd_entry_count++;
   }
 
   state->nfds = 1;
@@ -73,6 +83,10 @@ void stop_event_listener(EventState *state) {
   if (state->fd != -1) {
     close(state->fd);
     syslog(LOG_INFO, "File event listener has stopped...\n");
+  }
+
+  for (int i = 0; i < state->wd_entry_count; i++) {
+    free(state->wd_map[i].path);
   }
 
   if (state->wd != NULL) {
