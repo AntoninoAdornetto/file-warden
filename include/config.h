@@ -118,9 +118,9 @@ int set_paths_option(Config *cfg, char *value);
 /*
  * Helper for [set_option] function that is specific to the [events] setting.
  * It compares the value against allowed file events and enables a specific bit
- * in the [events_bmask] u8 property.
+ * in the [events_bmask] u8 property. Shouldn't error and will return 0.
  */
-void set_events_option(Config *cfg, char *value);
+int set_events_option(Config *cfg, char *value);
 
 /*
  * print debugging, just in case :)
