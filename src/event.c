@@ -65,3 +65,19 @@ EventState *start_event_listener(Config *cfg) {
   return state;
 }
 
+void stop_event_listener(EventState *state) {
+  if (state == NULL) {
+    return;
+  }
+
+  if (state->fd != -1) {
+    close(state->fd);
+    syslog(LOG_INFO, "File event listener has stopped...\n");
+  }
+
+  if (state->wd != NULL) {
+    free(state->wd);
+  }
+
+  free(state);
+}
