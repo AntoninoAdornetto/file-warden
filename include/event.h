@@ -13,7 +13,9 @@
 
 /*
  * [wd] inotify watch descriptor
- * [path] the path to the dir or file that [wd] is set too.
+ * [path] uses the [Config] struct to look up the path name of the watch
+ * descriptor. inotify event object doesn't provide the name of the path after
+ * reading a system event.
  */
 typedef struct {
   int wd;
@@ -25,10 +27,12 @@ typedef struct {
  * [wd] list of inotify watch descriptors
  * [nfds] Type used for the number of file descriptors.
  * [fds] describes a polling request.
- * [poll_n] @TODO: create a note that describes [poll_n] responsibility
- * [wd_map] look up table that links inotify watch descriptors to paths. It
- * provides a simple way to determine which path triggered an event.
- * [wd_entry_count] number of active elements contained in [wd_map].
+ * [poll_n] return value of [poll] used to monitor multiple file descriptors if
+ * they are ready for reading.
+ * [wd_map] look up table that links inotify watch
+ * descriptors to paths. It provides a simple way to determine which path
+ * triggered an event. [wd_entry_count] number of active elements contained in
+ * [wd_map].
  */
 typedef struct {
   int fd;
