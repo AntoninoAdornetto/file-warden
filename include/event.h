@@ -8,6 +8,9 @@
 #define POLL_INTERVAL_MS 500
 #define MAX_WATCH_DESCRIPTORS 50
 
+/* Exit codes */
+#define EXT_START_LISTENER 9
+
 /*
  * [wd] inotify watch descriptor
  * [path] the path to the dir or file that [wd] is set too.
@@ -39,9 +42,9 @@ typedef struct {
  * Allocates memory for [EventState], creates/initializes a new inotify
  * instance, allocates memory for watch descriptors [wd], adds all paths
  * contained in input [cfg] to inotify watch events, and creates the [WdEntry]
- * mapping. On error, a null pointer is returned. If no error, you are
- * responsible for freeing memory after use. [stop_event_listener] will perform
- * clean up duties.
+ * mapping. On error, a null pointer is returned and any memory used to create
+ * [EventState] is freed. If no error, you are responsible for freeing memory
+ * after use. [stop_event_listener] will perform clean up duties.
  */
 EventState *start_event_listener(Config *cfg);
 
