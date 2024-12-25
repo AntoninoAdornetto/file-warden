@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <syslog.h>
 #include <unistd.h>
 
 int file_exists(const char *filename) {
@@ -13,13 +14,13 @@ int file_exists(const char *filename) {
 
 char *expand_path(const char *path) {
   if (strlen(path) == 0) {
-    fprintf(stderr, "[ERROR]: Cannot expand a path that is empty\n");
+    syslog(LOG_ERR, "Cannot expand a path that is empty\n");
     return NULL;
   }
 
   char *full_path = (char *)malloc(sizeof(char) * 512);
   if (full_path == NULL) {
-    fprintf(stderr, "[ERROR]: Failed to allocate memory for expanded path\n");
+    syslog(LOG_ERR, "Failed to allocate memory for expanded path\n");
     return NULL;
   }
 
@@ -30,7 +31,7 @@ char *expand_path(const char *path) {
 
   char *home_path = getenv("HOME");
   if (home_path == NULL) {
-    fprintf(stderr, "[ERROR]: Failed to find $HOME in list of env variables\n");
+    syslog(LOG_ERR, "Failed to find $HOME in list of env variables\n");
     return NULL;
   }
 
@@ -39,35 +40,28 @@ char *expand_path(const char *path) {
 }
 
 char *read_file(const char *filename) {
-  char *cleaned_path = expand_path(filename);
-  if (cleaned_path == NULL) {
-    fprintf(stderr, "[ERROR]: Failed to expand path\n");
-    return NULL;
-  }
-
   struct stat stat_buf;
-  int ok = stat(cleaned_path, &stat_buf);
+  int ok = stat(filename, &stat_buf);
   if (ok == -1) {
-    fprintf(stderr, "[ERROR]: File [%s] does not exist\n", cleaned_path);
+    syslog(LOG_ERR, "File [%s] does not exist\n", filename);
     return NULL;
   }
 
   char *buf = (char *)malloc(stat_buf.st_size + 1);
   if (buf == NULL) {
-    fprintf(stderr, "[ERROR]: Failed to allocate memory for [%s] buffer\n",
-            cleaned_path);
+    syslog(LOG_ERR, "Failed to allocate memory for [%s] buffer\n", filename);
   }
 
-  int fd = open(cleaned_path, O_RDONLY);
+  int fd = open(filename, O_RDONLY);
   if (fd == -1) {
-    fprintf(stderr, "[ERROR]: Failed to open file [%s]\n", cleaned_path);
+    syslog(LOG_ERR, "Failed to open file [%s]\n", filename);
     free(buf);
     return NULL;
   }
 
   ssize_t bytes_read = read(fd, buf, stat_buf.st_size + 1);
   if (bytes_read == -1) {
-    fprintf(stderr, "[ERROR]: Failed to read file [%s]\n", cleaned_path);
+    syslog(LOG_ERR, "Failed to read file [%s]\n", filename);
     close(fd);
     free(buf);
     return NULL;
@@ -75,6 +69,5 @@ char *read_file(const char *filename) {
 
   buf[bytes_read] = '\0';
   close(fd);
-  free(cleaned_path);
   return buf;
 }
