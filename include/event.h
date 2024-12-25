@@ -56,4 +56,12 @@ EventState *start_event_listener(Config *cfg);
  */
 void stop_event_listener(EventState *state);
 
+/*
+ * Uses input [state] and [wd] to retrieve the path name that is linked to
+ * inotify watch descriptor [wd]. If no mapping is found, NULL is returned.
+ * Otherwise a pointer to the path is returned from field [wd_map] contained in
+ * [state].
+ */
+char *get_wd_path_mapping(EventState *state, int wd);
+
 #endif

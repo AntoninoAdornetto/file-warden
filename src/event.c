@@ -95,3 +95,13 @@ void stop_event_listener(EventState *state) {
 
   free(state);
 }
+
+char *get_wd_path_mapping(EventState *state, int wd) {
+  for (int i = 0; i < state->wd_entry_count; i++) {
+    if (state->wd_map[i].wd == wd) {
+      return state->wd_map[i].path;
+    }
+  }
+
+  return NULL;
+}
