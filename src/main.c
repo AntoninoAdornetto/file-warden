@@ -50,6 +50,8 @@ int main(int argc, char **argv) {
     exit(EXT_START_LISTENER);
   }
 
+  // @TODO: rm config debugging once events are working as expected
+  debug_config(cfg);
   while (running) {
     state->poll_n = poll(state->fds, state->nfds, POLL_INTERVAL_MS);
     if (state->poll_n == -1) {
