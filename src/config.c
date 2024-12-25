@@ -53,10 +53,6 @@ Config *init_config(void) {
     exit(result);
   }
 
-  if (cfg->config_location & (CFG_LOC_HOME | CFG_LOC_ETC)) {
-    free(program_settings);
-  }
-
   return cfg;
 }
 
@@ -82,7 +78,7 @@ char *get_config_settings(Config *cfg) {
     cfg->config_location = in_home ? CFG_LOC_HOME : CFG_LOC_ETC;
 
     char *settings = read_file(in_home ? CFG_HOME_PATH : CFG_ETC_PATH);
-    if (settings == NULL) {
+    if (settings != NULL) {
       syslog(LOG_INFO, "Using config file at [%s]\n",
              in_home ? CFG_HOME_PATH : CFG_ETC_PATH);
 
