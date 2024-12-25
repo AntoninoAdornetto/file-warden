@@ -64,4 +64,14 @@ void stop_event_listener(EventState *state);
  */
 char *get_wd_path_mapping(EventState *state, int wd);
 
+/*
+ * Handles file system events using the inotify API. It continuously reads
+ * events from the inotify file descritor, contained within the input [state],
+ * processed each event to determine the type of file operation, retrieves the
+ * accosicated file path from the events watch descriptor, and logs information
+ * about the event.
+ *
+ */
+int handle_events(EventState *state);
+
 #endif

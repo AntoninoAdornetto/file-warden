@@ -105,3 +105,49 @@ char *get_wd_path_mapping(EventState *state, int wd) {
 
   return NULL;
 }
+
+int handle_events(EventState *state) {
+  char buf[4096] __attribute__((aligned(__alignof__(struct inotify_event))));
+  const struct inotify_event *event;
+  size_t len;
+
+  for (;;) {
+    syslog(LOG_INFO, "Reading file descriptor [%d]\n", state->fd);
+    len = read(state->fd, buf, sizeof(buf));
+
+    if (len == -1) {
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        break;
+      }
+
+      syslog(LOG_ERR, "Failed to read events (fd=%d): %s\n", state->fd,
+             strerror(errno));
+      return -1;
+    }
+
+    if (len == 0) {
+      break;
+    }
+
+    for (char *ptr = buf; ptr < buf + len;
+         ptr += sizeof(struct inotify_event) + event->len) {
+      event = (const struct inotify_event *)ptr;
+
+      char *path = get_wd_path_mapping(state, event->wd);
+      if (path == NULL) {
+        syslog(LOG_ERR, "Failed to retrieve wd -> path mapping\n");
+        return -1;
+      }
+
+      if (event->mask & IN_ACCESS) {
+        syslog(LOG_INFO, "%s was accessed!\n", path);
+      }
+
+      if (event->mask & IN_MODIFY) {
+        syslog(LOG_INFO, "%s was modifed!\n", path);
+      }
+    }
+  }
+
+  return 0;
+}
