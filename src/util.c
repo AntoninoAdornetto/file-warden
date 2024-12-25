@@ -1,5 +1,6 @@
 #include "util.h"
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -70,4 +71,21 @@ char *read_file(const char *filename) {
   buf[bytes_read] = '\0';
   close(fd);
   return buf;
+}
+
+int init_signals(struct sigaction *sa) {
+  const SignalMapping sigs[] = {
+      {SIGTERM},
+      {SIGHUP},
+      {SIGINT},
+      {-1},
+  };
+
+  for (int i = 0; sigs[i].signal != -1; i++) {
+    if (sigaction(sigs[i].signal, sa, NULL) != 0) {
+      return EXT_INIT_SIGNALS;
+    }
+  }
+
+  return 0;
 }
