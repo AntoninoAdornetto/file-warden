@@ -1,4 +1,5 @@
 #include "config.h"
+#include "event.h"
 #include "util.h"
 #include <signal.h>
 #include <stdlib.h>
@@ -39,6 +40,13 @@ int main(int argc, char **argv) {
     syslog(LOG_ERR, "Failed to initialize signals\n");
     free_config(cfg);
     exit(sig_status);
+  }
+
+  EventState *state = start_event_listener(cfg);
+  if (state == NULL) {
+    syslog(LOG_ERR, "Failed to start file event listener\n");
+    free_config(cfg);
+    exit(EXT_START_LISTENER);
   }
 
   while (running) {
