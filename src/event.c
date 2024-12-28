@@ -1,5 +1,6 @@
 #include "event.h"
 #include "config.h"
+#include "notify.h"
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -144,10 +145,21 @@ int handle_events(EventState *state) {
       }
 
       if (event->mask & IN_ACCESS) {
+        int status = display_notification(path, "Was accessed");
+        if (status != 0) {
+          syslog(LOG_WARNING, "Failed to display file system access event. "
+                              "Note: event logged to journal\n");
+        }
+
         syslog(LOG_INFO, "%s was accessed!\n", path);
       }
 
       if (event->mask & IN_MODIFY) {
+        int status = display_notification(path, "Was modified");
+        if (status != 0) {
+          syslog(LOG_WARNING, "Failed to display 'modify' file system event. "
+                              "Note: event logged to journal");
+        }
         syslog(LOG_INFO, "%s was modifed!\n", path);
       }
     }
