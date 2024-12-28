@@ -80,13 +80,17 @@ void stop_event_listener(EventState *state) {
     return;
   }
 
+  for (int i = 0; i < state->wd_entry_count; i++) {
+    int status = inotify_rm_watch(state->fd, state->wd[i]);
+    if (status == -1) {
+      syslog(LOG_ERR, "Failed to remove watch descriptor from inotify event\n");
+    }
+    free(state->wd_map[i].path);
+  }
+
   if (state->fd != -1) {
     close(state->fd);
     syslog(LOG_INFO, "File event listener has stopped...\n");
-  }
-
-  for (int i = 0; i < state->wd_entry_count; i++) {
-    free(state->wd_map[i].path);
   }
 
   if (state->wd != NULL) {
