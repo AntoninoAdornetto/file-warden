@@ -10,18 +10,19 @@
 
 int file_exists(const char *filename) {
   struct stat buf;
-  return (stat(filename, &buf) == 0);
+  int exists = stat(filename, &buf);
+  return exists == 0;
 }
 
 char *expand_path(const char *path) {
   if (strlen(path) == 0) {
-    syslog(LOG_ERR, "Cannot expand a path that is empty\n");
+    syslog(LOG_ERR, "Cannot expand a path that is empty");
     return NULL;
   }
 
   char *full_path = (char *)malloc(sizeof(char) * 512);
   if (full_path == NULL) {
-    syslog(LOG_ERR, "Failed to allocate memory for expanded path\n");
+    syslog(LOG_ERR, "Failed to allocate memory for expanded path");
     return NULL;
   }
 
@@ -32,7 +33,7 @@ char *expand_path(const char *path) {
 
   char *home_path = getenv("HOME");
   if (home_path == NULL) {
-    syslog(LOG_ERR, "Failed to find $HOME in list of env variables\n");
+    syslog(LOG_ERR, "Failed to find $HOME in list of env variables");
     return NULL;
   }
 
@@ -44,25 +45,26 @@ char *read_file(const char *filename) {
   struct stat stat_buf;
   int ok = stat(filename, &stat_buf);
   if (ok == -1) {
-    syslog(LOG_ERR, "File [%s] does not exist\n", filename);
+    syslog(LOG_ERR, "File [%s] does not exist", filename);
     return NULL;
   }
 
   char *buf = (char *)malloc(stat_buf.st_size + 1);
   if (buf == NULL) {
-    syslog(LOG_ERR, "Failed to allocate memory for [%s] buffer\n", filename);
+    syslog(LOG_ERR, "Failed to allocate memory for [%s] buffer", filename);
+    return NULL;
   }
 
   int fd = open(filename, O_RDONLY);
   if (fd == -1) {
-    syslog(LOG_ERR, "Failed to open file [%s]\n", filename);
+    syslog(LOG_ERR, "Failed to open file [%s]", filename);
     free(buf);
     return NULL;
   }
 
   ssize_t bytes_read = read(fd, buf, stat_buf.st_size + 1);
   if (bytes_read == -1) {
-    syslog(LOG_ERR, "Failed to read file [%s]\n", filename);
+    syslog(LOG_ERR, "Failed to read file [%s]", filename);
     close(fd);
     free(buf);
     return NULL;
