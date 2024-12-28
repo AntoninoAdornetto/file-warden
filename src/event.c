@@ -111,6 +111,18 @@ char *get_wd_path_mapping(EventState *state, int wd) {
   return NULL;
 }
 
+/*
+ * @TODO: event handler should use cfg option settings for notifications
+ * Currently, the file system events that are listened to, by inotify, are
+ * hardcoded. This was for testing purposes so that I could acclimate myself to
+ * the inotify & libnotify APIs. Ideally, we should use the event mask, read in
+ * from our programs settings instead of hardcoding. Additionally, we should
+ * adjust the `display_notification` function so that it can prepare a
+ * notification message that also utilizes the events mask read in
+ * from the programs setting. This can be done in an idiomatic fashion. Lastly,
+ * the system logs to `journal` can be moved into the `display_notification`
+ * function.
+ */
 int handle_events(EventState *state) {
   char buf[4096] __attribute__((aligned(__alignof__(struct inotify_event))));
   const struct inotify_event *event;
