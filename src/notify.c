@@ -24,7 +24,7 @@ int display_notification(const char *title, const char *body) {
   }
 
   notify_notification_set_timeout(notif, NOTIF_TIMEOUT_MS);
-  notify_notification_set_urgency(notif, NOTIFY_URGENCY_CRITICAL);
+  notify_notification_set_urgency(notif, NOTIFY_URGENCY_NORMAL);
 
   bool status = notify_notification_show(notif, NULL);
   if (!status) {
