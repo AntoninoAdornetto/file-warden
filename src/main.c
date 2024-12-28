@@ -16,15 +16,15 @@ void handle_signal(int sig) {
   case SIGINT:
   case SIGKILL:
   case SIGABRT:
-    syslog(LOG_INFO, "Exit signal [%d] received\n", sig);
+    syslog(LOG_INFO, "Exit signal [%d] received", sig);
     running = 0;
     break;
   case SIGHUP:
-    syslog(LOG_INFO, "Configuration reload signal [%d] received\n", sig);
+    syslog(LOG_INFO, "Configuration reload signal [%d] received", sig);
     running = 0;
     break;
   default:
-    syslog(LOG_WARNING, "Recieved unexpected signal [%d]\n", sig);
+    syslog(LOG_WARNING, "Recieved unexpected signal [%d]", sig);
     break;
   }
 }
@@ -39,21 +39,21 @@ int main(int argc, char **argv) {
 
   int sig_status = init_signals(&sa);
   if (sig_status != 0) {
-    syslog(LOG_ERR, "Failed to initialize signals\n");
+    syslog(LOG_ERR, "Failed to initialize signals");
     free_config(cfg);
     exit(sig_status);
   }
 
   EventState *state = start_event_listener(cfg);
   if (state == NULL) {
-    syslog(LOG_ERR, "Failed to start file event listener\n");
+    syslog(LOG_ERR, "Failed to start file event listener");
     free_config(cfg);
     exit(EXT_START_LISTENER);
   }
 
   int notif_status = init_notif();
   if (notif_status != 0) {
-    syslog(LOG_ERR, "Failed to initalize notifications\n");
+    syslog(LOG_ERR, "Failed to initalize notifications");
     stop_event_listener(state);
     free_config(cfg);
     uninit_notif();
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
         continue;
       }
 
-      syslog(LOG_ERR, "Failed to poll file descriptor for inotify events\n");
+      syslog(LOG_ERR, "Failed to poll file descriptor for inotify events");
       running = 0;
     }
 
@@ -78,13 +78,13 @@ int main(int argc, char **argv) {
       int event_status = handle_events(state);
 
       if (event_status != 0) {
-        syslog(LOG_ERR, "Failed to handle file events\n");
+        syslog(LOG_ERR, "Failed to handle file events");
         running = 0;
       }
     }
   }
 
-  syslog(LOG_INFO, "Cleaning up...\n");
+  syslog(LOG_INFO, "Cleaning up...");
   stop_event_listener(state);
   free_config(cfg);
   uninit_notif();

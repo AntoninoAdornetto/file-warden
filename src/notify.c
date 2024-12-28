@@ -7,7 +7,7 @@
 
 int init_notif(void) {
   if (!(notify_init("file-warden"))) {
-    syslog(LOG_ERR, "Failed to initialize libnotify\n");
+    syslog(LOG_ERR, "Failed to initialize libnotify");
     return EXT_INIT_NOTIF;
   }
 
@@ -19,7 +19,7 @@ void uninit_notif(void) { notify_uninit(); }
 int display_notification(const char *title, const char *body) {
   NotifyNotification *notif = notify_notification_new(title, body, NULL);
   if (notif == NULL) {
-    syslog(LOG_ERR, "Failed to create a new libnotify notification instance\n");
+    syslog(LOG_ERR, "Failed to create a new libnotify notification instance");
     return EXT_CREAT_NOTIF;
   }
 
@@ -28,7 +28,7 @@ int display_notification(const char *title, const char *body) {
 
   bool status = notify_notification_show(notif, NULL);
   if (!status) {
-    syslog(LOG_ERR, "Failed to display libnotify notification\n");
+    syslog(LOG_ERR, "Failed to display libnotify notification");
     g_object_unref(notif);
     return EXT_DISPLAY_NOTIF;
   }
