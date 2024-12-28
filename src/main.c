@@ -1,5 +1,6 @@
 #include "config.h"
 #include "event.h"
+#include "notify.h"
 #include "util.h"
 #include <errno.h>
 #include <signal.h>
@@ -50,6 +51,15 @@ int main(int argc, char **argv) {
     exit(EXT_START_LISTENER);
   }
 
+  int notif_status = init_notif();
+  if (notif_status != 0) {
+    syslog(LOG_ERR, "Failed to initalize notifications\n");
+    stop_event_listener(state);
+    free_config(cfg);
+    uninit_notif();
+    exit(notif_status);
+  }
+
   // @TODO: rm config debugging once events are working as expected
   debug_config(cfg);
   while (running) {
@@ -77,5 +87,6 @@ int main(int argc, char **argv) {
   syslog(LOG_INFO, "Cleaning up...\n");
   stop_event_listener(state);
   free_config(cfg);
+  uninit_notif();
   exit(EXIT_SUCCESS);
 }
