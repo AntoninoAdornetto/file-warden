@@ -112,7 +112,7 @@ char *get_wd_path_mapping(EventState *state, int wd) {
 }
 
 /*
- * @TODO: event handler should use cfg option settings for notifications
+ * @TODO:(#8) event handler should use cfg option settings for notifications
  * Currently, the file system events that are listened to, by inotify, are
  * hardcoded. This was for testing purposes so that I could acclimate myself to
  * the inotify & libnotify APIs. Ideally, we should use the event mask, read in
