@@ -3,16 +3,9 @@
 
 #include "util.h"
 
-/* Configuration option bit flags */
-#define FLAG_INVAL_OPT 0x00
-#define FLAG_PATHS_OPT 0x01
-#define FLAG_EVENTS_OPT 0x02
-
-/* File event bit flags */
-#define FLAG_ACCESS 0x01
-#define FLAG_MODIFY 0x02
-#define FLAG_MOVE 0x04
-#define FLAG_CLOSE 0x08
+#define FLAG_INVAL_OPT 0x00  // Invalid configuration option
+#define FLAG_PATHS_OPT 0x01  // paths we will enable fs event watchers on
+#define FLAG_EVENTS_OPT 0x02 // events that we would like notification for
 
 /* Configuration setting line and key/value (option) lengths */
 #define MAX_OPT_LINE_LEN 512
@@ -36,25 +29,28 @@
 /*
  * [paths] houses the file/dir paths that the daemon will monitor.
  * [paths_size] number of elements contained in [paths].
- * [events_bmask] bit mask that indicates what file events the daemon will
- * trigger notifications for.
+ * [events_mask] bit mask that indicates which file system events we want to
+ * listen for. The flags are defined by inotify, e.g., IN_ACCESS, IN_OPEN,
+ * IN_CLOSE, etc...
  * [config_location] the config file used for current session. Corresponds to
  * CFG_LOC bit flag.
  */
 typedef struct {
   char **paths;
   int paths_size;
-  u8 events_bmask;
-  u8 config_location;
+  u32 events_mask;
+  u32 config_location;
 } Config;
 
 /*
- * Used for enabling bits in [events_bmask]
+ * Maps a File System event string to corresponding bit flag. The flags are
+ * defined by inotify. The mapping will help produce a bit mask that is suitable
+ * for inotify to invoke [inotify_add_watch].
  */
 typedef struct {
-  const char *name;
-  u8 flag;
-} FileEventMapping;
+  char *name;
+  u32 flag;
+} FSEventMapping;
 
 /*
  * Allocates memory for [Config] struct and [paths] property.
@@ -102,7 +98,7 @@ int process_line_option(Config *cfg, char *line);
  * matches an option, a non zero bit flag is returned. If no match is found, 0
  * is returned.
  */
-u8 validate_option(char *setting_key);
+u32 validate_option(char *setting_key);
 
 /*
  * Determines which field (in [cfg]) that [value] should be mapped too.
@@ -110,7 +106,7 @@ u8 validate_option(char *setting_key);
  * if a property in [cfg] stores [value] in a property. Otherwise -1 is
  * returned.
  */
-int set_option(Config *cfg, u8 option_flag, char *value);
+int set_option(Config *cfg, u32 option_flag, char *value);
 
 /*
  * Util function for [set_option] that is specifc to appending path [value] to

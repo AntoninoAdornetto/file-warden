@@ -29,19 +29,14 @@ typedef struct {
  * [fds] describes a polling request.
  * [poll_n] return value of [poll] used to monitor multiple file descriptors if
  * they are ready for reading.
- * [wd_map] look up table that links inotify watch
- * descriptors to paths. It provides a simple way to determine which path
- * triggered an event. [wd_entry_count] number of active elements contained in
- * [wd_map].
  */
 typedef struct {
   int fd;
   int *wd;
+  int wd_count;
   nfds_t nfds;
   struct pollfd fds[1];
   int poll_n;
-  WdEntry wd_map[MAX_WATCH_DESCRIPTORS];
-  int wd_entry_count;
 } EventState;
 
 /*
@@ -59,14 +54,6 @@ EventState *start_event_listener(Config *cfg);
  * [state].
  */
 void stop_event_listener(EventState *state);
-
-/*
- * Uses input [state] and [wd] to retrieve the path name that is linked to
- * inotify watch descriptor [wd]. If no mapping is found, NULL is returned.
- * Otherwise a pointer to the path is returned from field [wd_map] contained in
- * [state].
- */
-char *get_wd_path_mapping(EventState *state, int wd);
 
 /*
  * Handles file system events using the inotify API. It continuously reads

@@ -6,7 +6,7 @@
 
 #define EXT_INIT_SIGNALS 8
 
-typedef uint8_t u8;
+typedef uint32_t u32;
 
 typedef struct {
   int signal;

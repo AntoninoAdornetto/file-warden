@@ -29,42 +29,28 @@ EventState *start_event_listener(Config *cfg) {
     return NULL;
   }
 
-  state->wd_entry_count = 0;
   for (int i = 0; i < cfg->paths_size; i++) {
     if (i > MAX_WATCH_DESCRIPTORS - 1) {
-      syslog(LOG_ERR, "Cannot watch more than [%d] files/directories",
-             MAX_WATCH_DESCRIPTORS);
+      syslog(LOG_ERR, "Cannot exceed [%d] wd's", MAX_WATCH_DESCRIPTORS);
       stop_event_listener(state);
       return NULL;
     }
 
-    // @TODO: utilize configuration events instead of hardcoding the event mask
-    state->wd[i] = inotify_add_watch(state->fd, cfg->paths[i], IN_ACCESS);
+    if (cfg->paths[i] == NULL) {
+      syslog(LOG_ERR, "Expected index [%d] to contain a watch path", i);
+      stop_event_listener(state);
+      return NULL;
+    }
+
+    state->wd[i] =
+        inotify_add_watch(state->fd, cfg->paths[i], cfg->events_mask);
+
     if (state->wd[i] == -1) {
       syslog(LOG_ERR, "Failed to add [%s] to inotify watch list. [error: %s]",
              cfg->paths[i], strerror(errno));
       stop_event_listener(state);
       return NULL;
     }
-
-    if (cfg->paths[i] == NULL) {
-      syslog(LOG_ERR,
-             "Expected index [%d] to contain a valid path but got null", i);
-      stop_event_listener(state);
-      return NULL;
-    }
-
-    state->wd_map[i].path = malloc(sizeof(char) * strlen(cfg->paths[i]) + 1);
-    if (state->wd_map[i].path == NULL) {
-      syslog(LOG_ERR,
-             "Failed to allocate memory for path mapping at index [%d]", i);
-      stop_event_listener(state);
-      return NULL;
-    }
-
-    state->wd_map[i].wd = state->wd[i];
-    strcpy(state->wd_map[i].path, cfg->paths[i]);
-    state->wd_entry_count++;
   }
 
   state->nfds = 1;
@@ -80,12 +66,11 @@ void stop_event_listener(EventState *state) {
     return;
   }
 
-  for (int i = 0; i < state->wd_entry_count; i++) {
+  for (int i = 0; state->wd[i]; i++) {
     int status = inotify_rm_watch(state->fd, state->wd[i]);
     if (status == -1) {
       syslog(LOG_ERR, "Failed to remove watch descriptor from inotify event");
     }
-    free(state->wd_map[i].path);
   }
 
   if (state->fd != -1) {
@@ -100,28 +85,6 @@ void stop_event_listener(EventState *state) {
   free(state);
 }
 
-char *get_wd_path_mapping(EventState *state, int wd) {
-  for (int i = 0; i < state->wd_entry_count; i++) {
-    if (state->wd_map[i].wd == wd) {
-      return state->wd_map[i].path;
-    }
-  }
-
-  return NULL;
-}
-
-/*
- * @TODO:(#8) event handler should use cfg option settings for notifications
- * Currently, the file system events that are listened to, by inotify, are
- * hardcoded. This was for testing purposes so that I could acclimate myself to
- * the inotify & libnotify APIs. Ideally, we should use the event mask, read in
- * from our programs settings instead of hardcoding. Additionally, we should
- * adjust the `display_notification` function so that it can prepare a
- * notification message that also utilizes the events mask read in
- * from the programs setting. This can be done in an idiomatic fashion. Lastly,
- * the system logs to `journal` can be moved into the `display_notification`
- * function.
- */
 int handle_events(EventState *state) {
   char buf[4096] __attribute__((aligned(__alignof__(struct inotify_event))));
   const struct inotify_event *event;
@@ -149,29 +112,10 @@ int handle_events(EventState *state) {
          ptr += sizeof(struct inotify_event) + event->len) {
       event = (const struct inotify_event *)ptr;
 
-      char *path = get_wd_path_mapping(state, event->wd);
-      if (path == NULL) {
-        syslog(LOG_ERR, "Failed to retrieve wd -> path mapping");
-        return -1;
-      }
-
-      if (event->mask & IN_ACCESS) {
-        int status = display_notification(path, "Was accessed");
-        if (status != 0) {
-          syslog(LOG_WARNING, "Failed to display file system access event. "
-                              "Note: event logged to journal");
-        }
-
-        syslog(LOG_INFO, "%s was accessed!", path);
-      }
-
-      if (event->mask & IN_MODIFY) {
-        int status = display_notification(path, "Was modified");
-        if (status != 0) {
-          syslog(LOG_WARNING, "Failed to display 'modify' file system event. "
-                              "Note: event logged to journal");
-        }
-        syslog(LOG_INFO, "%s was modifed!", path);
+      int status = notify(event);
+      if (status != 0) {
+        syslog(LOG_WARNING, "Failed to send desktop notification");
+        syslog(LOG_WARNING, "Event may have been logged to journal");
       }
     }
   }

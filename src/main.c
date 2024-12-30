@@ -51,12 +51,12 @@ int main(int argc, char **argv) {
     exit(EXT_START_LISTENER);
   }
 
-  int notif_status = init_notif();
+  int notif_status = init_libnotify();
   if (notif_status != 0) {
     syslog(LOG_ERR, "Failed to initalize notifications");
     stop_event_listener(state);
     free_config(cfg);
-    uninit_notif();
+    uninit_libnotify();
     exit(notif_status);
   }
 
@@ -87,6 +87,6 @@ int main(int argc, char **argv) {
   syslog(LOG_INFO, "Cleaning up...");
   stop_event_listener(state);
   free_config(cfg);
-  uninit_notif();
+  uninit_libnotify();
   exit(EXIT_SUCCESS);
 }

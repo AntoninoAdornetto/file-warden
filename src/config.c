@@ -3,18 +3,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/inotify.h>
 #include <sys/stat.h>
 #include <sys/syslog.h>
 
 /* Configuration options (tbd if more will be added) */
 static const char *OPT_PATHS = "paths";
 static const char *OPT_EVENTS = "events";
-
-/* Permitted file events for [OPT_EVENTS] option setting */
-static const char *EVENT_ACCESS = "accessed";
-static const char *EVENT_MODIFY = "modified";
-static const char *EVENT_MOVE = "moved";
-static const char *EVENT_CLOSE = "closed";
 
 /*
  * Configuration files can be stored in either location.
@@ -69,19 +64,26 @@ void free_config(Config *cfg) {
 }
 
 char *get_config_settings(Config *cfg) {
-  int in_home = file_exists(CFG_HOME_PATH);
+  char *exp_home_path = expand_path(CFG_HOME_PATH);
+  if (exp_home_path == NULL) {
+    syslog(LOG_ERR, "Failed to read config settings");
+    return NULL;
+  }
+
+  int in_home = file_exists(exp_home_path);
   int in_etc = file_exists(CFG_ETC_PATH);
 
-  // we should use the home configuration first since it's user specific
-  // and defer to system configuration if home file is not present.
+  // Convention is to use home (user) configuration first.
+  // If no user config, we can proceed with checking for etc (system-wide) cfg.
+  // Lastly, if neither are present. We will defer to the default settings
   if (in_home || in_etc) {
     cfg->config_location = in_home ? CFG_LOC_HOME : CFG_LOC_ETC;
 
-    char *settings = read_file(in_home ? CFG_HOME_PATH : CFG_ETC_PATH);
+    char *settings = read_file(in_home ? exp_home_path : CFG_ETC_PATH);
     if (settings != NULL) {
       syslog(LOG_INFO, "Using config file at [%s]",
-             in_home ? CFG_HOME_PATH : CFG_ETC_PATH);
-
+             in_home ? exp_home_path : CFG_ETC_PATH);
+      free(exp_home_path);
       return settings;
     }
 
@@ -92,6 +94,8 @@ char *get_config_settings(Config *cfg) {
   syslog(LOG_WARNING,
          "Config files may not exist.\nPlease create or copy the example "
          "config.\nDeferring to sensible default settings");
+
+  free(exp_home_path);
 
   // Sensible default if the config files are not present.
   cfg->config_location = CFG_LOC_DEFAULT;
@@ -109,8 +113,14 @@ int process_settings(Config *cfg, const char *settings) {
     return EXT_NULL_CFG;
   }
 
-  char buf[MAX_OPT_LINE_LEN];
-  strcpy(buf, settings);
+  char buf[MAX_OPT_LINE_LEN] = {0};
+  if (strlen(settings) >= MAX_OPT_LINE_LEN - 1) {
+    syslog(LOG_ERR, "Option settings line [%s] exceeds [%d] bytes", settings,
+           MAX_OPT_LINE_LEN);
+    return EXT_OPT_FORMAT;
+  } else {
+    strncpy(buf, settings, MAX_OPT_LINE_LEN);
+  }
 
   char *line = strtok(buf, "\n");
   while (line != NULL) {
@@ -137,7 +147,7 @@ int process_line_option(Config *cfg, char *line) {
 
   strncpy(key, line, equal_sign - line);
   key[equal_sign - line] = '\0';
-  u8 opt_flag = validate_option(key);
+  u32 opt_flag = validate_option(key);
   if (opt_flag == FLAG_INVAL_OPT) {
     syslog(LOG_WARNING, "Invalid option setting [%s]", key);
   }
@@ -154,7 +164,7 @@ int process_line_option(Config *cfg, char *line) {
   return 0;
 }
 
-u8 validate_option(char *setting_key) {
+u32 validate_option(char *setting_key) {
   if (strcmp(setting_key, OPT_PATHS) == 0) {
     return FLAG_PATHS_OPT;
   }
@@ -167,7 +177,7 @@ u8 validate_option(char *setting_key) {
   return 0;
 }
 
-int set_option(Config *cfg, u8 option_flag, char *value) {
+int set_option(Config *cfg, u32 option_flag, char *value) {
   if (option_flag & FLAG_PATHS_OPT) {
     return set_paths_option(cfg, value);
   }
@@ -202,15 +212,14 @@ int set_paths_option(Config *cfg, char *value) {
 }
 
 int set_events_option(Config *cfg, char *value) {
-  const FileEventMapping events[] = {{EVENT_ACCESS, FLAG_ACCESS},
-                                     {EVENT_MODIFY, FLAG_MODIFY},
-                                     {EVENT_MOVE, FLAG_MOVE},
-                                     {EVENT_CLOSE, FLAG_CLOSE},
-                                     {NULL, 0}};
+  FSEventMapping events[8] = {{"open", IN_OPEN},     {"access", IN_ACCESS},
+                              {"modify", IN_MODIFY}, {"close", IN_CLOSE},
+                              {"move", IN_MOVE},     {"create", IN_CREATE},
+                              {"delete", IN_DELETE}, {0, 0}};
 
-  for (int i = 0; events[i].name != NULL; i++) {
+  for (int i = 0; events[i].flag != 0 && events[i].name != 0; i++) {
     if (strcmp(value, events[i].name) == 0) {
-      cfg->events_bmask |= events[i].flag;
+      cfg->events_mask |= events[i].flag;
       break;
     }
   }
@@ -224,8 +233,7 @@ void debug_config(Config *cfg) {
   }
 
   syslog(LOG_DEBUG, "Paths option settings");
-  syslog(LOG_DEBUG, "Number of paths set for monitoring [%d]",
-         cfg->paths_size);
+  syslog(LOG_DEBUG, "Number of paths set for monitoring [%d]", cfg->paths_size);
 
   for (int i = 0; i < cfg->paths_size; i++) {
     syslog(LOG_DEBUG, "Path @ index [%d] contains value [%s]", i,
@@ -233,26 +241,38 @@ void debug_config(Config *cfg) {
   }
 
   syslog(LOG_DEBUG, "File event option settings");
-  if (cfg->events_bmask == 0) {
+  if (cfg->events_mask == 0) {
     syslog(LOG_DEBUG, "File event flags are not enabled");
     return;
   } else {
-    syslog(LOG_DEBUG, "File Event Bit Flags [0x%08X]", cfg->events_bmask);
+    syslog(LOG_DEBUG, "File Event Bit Flags [0x%08X]", cfg->events_mask);
   }
 
-  if (cfg->events_bmask & FLAG_ACCESS) {
+  if (cfg->events_mask & IN_ACCESS) {
     syslog(LOG_DEBUG, "File access event flag enabled");
   }
 
-  if (cfg->events_bmask & FLAG_MODIFY) {
+  if (cfg->events_mask & IN_MODIFY) {
     syslog(LOG_DEBUG, "File modify event flag enabled");
   }
 
-  if (cfg->events_bmask & FLAG_MOVE) {
+  if (cfg->events_mask & IN_MOVE) {
     syslog(LOG_DEBUG, "File move event flag enabled");
   }
 
-  if (cfg->events_bmask & FLAG_CLOSE) {
+  if (cfg->events_mask & IN_CLOSE) {
     syslog(LOG_DEBUG, "File close event flag enabled");
+  }
+
+  if (cfg->events_mask & IN_OPEN) {
+    syslog(LOG_DEBUG, "File open event flag enabled");
+  }
+
+  if (cfg->events_mask & IN_CREATE) {
+    syslog(LOG_DEBUG, "File create event flag enabled");
+  }
+
+  if (cfg->events_mask & IN_DELETE) {
+    syslog(LOG_DEBUG, "File delete event flag enabled");
   }
 }
