@@ -113,8 +113,8 @@ int process_settings(Config *cfg, const char *settings) {
     return EXT_NULL_CFG;
   }
 
-  char buf[MAX_OPT_LINE_LEN];
-  if (strlen(settings) >= MAX_OPT_LINE_LEN) {
+  char buf[MAX_OPT_LINE_LEN] = {0};
+  if (strlen(settings) >= MAX_OPT_LINE_LEN - 1) {
     syslog(LOG_ERR, "Option settings line [%s] exceeds [%d] bytes", settings,
            MAX_OPT_LINE_LEN);
     return EXT_OPT_FORMAT;
@@ -273,6 +273,6 @@ void debug_config(Config *cfg) {
   }
 
   if (cfg->events_mask & IN_DELETE) {
-    syslog(LOG_DEBUG, "File create event flag enabled");
+    syslog(LOG_DEBUG, "File delete event flag enabled");
   }
 }
