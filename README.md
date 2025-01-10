@@ -191,21 +191,3 @@ TODO!
 [license-shield]: https://img.shields.io/github/license/AntoninoAdornetto/file-warden.svg?style=for-the-badge
 [license-url]: https://github.com/AntoninoAdornetto/file-warden/blob/master/LICENSE.txt
 [product-screenshot]: images/screenshot.png
-
-# File Warden
-
-# Overview
-
-File Warden is a file monitoring tool designed to track and respond to file system events within specified directories. I created the program for recreational purposes as my primary goal
-was to learn more about Daemons and systemd managed services. I also found that having a tool 
-
-File Warden is a monitoring tool designed to track and respond to file system events within specified directories. The reason I created this program was for recreational purposes. I wanted to learn more about daemons and create one myself. File warden is a managed service (`systemd`). The key features are:
-
-- `Real time monitoring`: Observe designated paths for various file system activities, such as opening, closing, creating, deleting, reading, and writing files. 
-
-- `Notifications`: The program utilizes `libnotify` to deliver desktop alerts whenever a monitoring path experiences a files system event.
-
-- `Logging`: Records all file system events to `journal` alongside desktop notifications
-
-These features allow you to monitor critical files or directories.
-
