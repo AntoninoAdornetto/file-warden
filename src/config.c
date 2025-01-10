@@ -99,7 +99,7 @@ char *get_config_settings(Config *cfg) {
 
   // Sensible default if the config files are not present.
   cfg->config_location = CFG_LOC_DEFAULT;
-  return "paths=~/.ssh\nevents=accessed,modified,moved,closed\n";
+  return "paths=~/.ssh\nevents=open,move,create,delete,modify\n";
 }
 
 int process_settings(Config *cfg, const char *settings) {
