@@ -105,9 +105,7 @@ cp docs/file-warden.example.service ~/.config/systemd/user/file-warden.service
 
 4. Update the ExecStart path to where your binary is located
 ```bash
-# Use your favorite text editor to adjust the below option in the file-warden.service
-# unit configuration file
-ExecStart=path-to-local-file-warden-repo/build/file-warden
+# @TODO: Provide instructions on how to define the ExecStart path
 ```
 
 4. Reload systemd user services
@@ -117,6 +115,7 @@ systemctl --user daemon-reload
 
 5. Define watch paths and events via configuration file
 ```bash
+# @TODO: Provide instructions on how to create the program configuration file
 ```
 
 6. Start/enable the service
