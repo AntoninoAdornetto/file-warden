@@ -76,7 +76,7 @@ int notify(const struct inotify_event *event) {
       remaining -= strlen(notif_msg) - 1;
       strncat(notif_msg, ev[i].summary, remaining);
 
-      syslog(LOG_INFO, "%s %s", ev[i].title, ev[i].summary);
+      syslog(LOG_INFO, "%s %s", ev[i].title, notif_msg);
       return send_notification(ev[i].title, notif_msg);
     }
   }
