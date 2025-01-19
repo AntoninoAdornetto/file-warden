@@ -16,8 +16,8 @@ static const char *OPT_EVENTS = "events";
  * Home dir will be user specific whereas /etc is system wide.
  * Sensible default settings are used if the conf files don't exist.
  */
-static const char *CFG_ETC_PATH = "/etc/file-warden.conf";
-static const char *CFG_HOME_PATH = "~/.file-warden.conf";
+static const char *CFG_SYS_PATH = "/etc/file-warden.conf";
+static const char *CFG_USER_PATH = "~/.config/file-warden/file-warden.conf";
 
 Config *init_config(void) {
   Config *cfg = (Config *)malloc(sizeof(Config));
@@ -64,14 +64,14 @@ void free_config(Config *cfg) {
 }
 
 char *get_config_settings(Config *cfg) {
-  char *exp_home_path = expand_path(CFG_HOME_PATH);
+  char *exp_home_path = expand_path(CFG_USER_PATH);
   if (exp_home_path == NULL) {
     syslog(LOG_ERR, "Failed to read config settings");
     return NULL;
   }
 
   int in_home = file_exists(exp_home_path);
-  int in_etc = file_exists(CFG_ETC_PATH);
+  int in_etc = file_exists(CFG_SYS_PATH);
 
   // Convention is to use home (user) configuration first.
   // If no user config, we can proceed with checking for etc (system-wide) cfg.
@@ -79,10 +79,10 @@ char *get_config_settings(Config *cfg) {
   if (in_home || in_etc) {
     cfg->config_location = in_home ? CFG_LOC_HOME : CFG_LOC_ETC;
 
-    char *settings = read_file(in_home ? exp_home_path : CFG_ETC_PATH);
+    char *settings = read_file(in_home ? exp_home_path : CFG_SYS_PATH);
     if (settings != NULL) {
       syslog(LOG_INFO, "Using config file at [%s]",
-             in_home ? exp_home_path : CFG_ETC_PATH);
+             in_home ? exp_home_path : CFG_SYS_PATH);
       free(exp_home_path);
       return settings;
     }
