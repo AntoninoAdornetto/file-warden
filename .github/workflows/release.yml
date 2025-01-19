@@ -1,0 +1,28 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Create Tarball with gzip compression
+      run: |
+          TAG=${GITHUB_REF##*/}
+          tar -czf "file-warden-${TAG}.tar.gz" src/ include/ Makefile
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: file-warden
+        path: "file-warden-${{ github.ref_name }}.tar.gz" 
