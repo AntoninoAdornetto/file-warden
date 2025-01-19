@@ -11,16 +11,18 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+    - name: Create Tarball
       run: |
           TAG=${GITHUB_REF##*/}
           tar -czf "file-warden-${TAG}.tar.gz" src/ include/ Makefile
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
+    - name: Test # TODO: Delete me after testing
+      run: |
+        TAG=${GITHUB_REF##*/}
+        tar -tvf "file-warden-${TAG}.tar.gz"
+    - name: Release
+      uses: softprops/action-gh-release@v2
       with:
-        name: file-warden
-        path: "file-warden-${{ github.ref_name }}.tar.gz" 
+        files: "file-warden-${{ github.ref_name }}.tar.gz"
