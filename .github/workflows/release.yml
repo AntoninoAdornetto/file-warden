@@ -14,9 +14,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Create Tarball with gzip compression
+      uses: actions/checkout@v4
       run: |
           TAG=${GITHUB_REF##*/}
           tar -czf "file-warden-${TAG}.tar.gz" src/ include/ Makefile
