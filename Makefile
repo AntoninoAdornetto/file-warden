@@ -1,30 +1,25 @@
 CC=gcc
-
 SRC_DIR = src
 BUILD_DIR = build
 INCLUDE_DIR = include
+BIN = file-warden
 
-C_FLAGS = -Wall -pedantic -std=gnu99 -I$(INCLUDE_DIR)
-
-C_SOURCES = $(shell find $(SRC_DIR) -name '*.c')
-OBJS = $(C_SOURCES:$(SRC_DIR)%.c=$(BUILD_DIR)%.o)
+CFLAGS = -Wall -pedantic -std=gnu99 -I$(INCLUDE_DIR)
+SOURCES = $(shell find $(SRC_DIR) -name '*.c')
+OBJS      = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SOURCES))
 LIBS = $(shell pkg-config --cflags --libs libnotify)
-
 EXEC = $(BUILD_DIR)/file-warden
 
 all: $(EXEC)
 
-$(EXEC): $(C_SOURCES)
+$(EXEC): $(SOURCES)
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(C_SOURCES) -o $(EXEC) $(C_FLAGS) $(LIBS)
+	$(CC) $(SOURCES) -o $(EXEC) $(CFLAGS) $(LIBS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-	$(CC) -c $< -o $@ $(C_FLAGS)
+	$(CC) -c $< -o $@ $(CFLAGS)
 
 clean:
 	rm -r $(BUILD_DIR)
 
-run:
-	@$(EXEC)
-
-.phony: all clean run
+.phony: all clean
