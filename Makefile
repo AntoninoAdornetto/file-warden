@@ -19,7 +19,7 @@ $(EXEC): $(C_SOURCES)
 	$(CC) $(C_SOURCES) -o $(EXEC) $(C_FLAGS) $(LIBS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-	$(CC) -c $< -o $@ $(CFLAGS)
+	$(CC) -c $< -o $@ $(C_FLAGS)
 
 clean:
 	rm -r $(BUILD_DIR)
